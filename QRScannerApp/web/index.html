@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Java-powered QR Code Scanner. Scan via camera or upload an image. Java backend decodes with ZXing and redirects to the URL." />
+  <title>QR Scanner — Java Web App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </div>
+      <span class="logo-text">QR<span class="accent">Scanner</span></span>
+    </div>
+    <p class="tagline">Java-Powered · Scan · Detect · Redirect</p>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="main-grid">
+
+    <!-- ══ Scanner Card ══════════════════════════════════════════════════ -->
+    <section class="card scanner-card" aria-label="QR Code Scanner">
+
+      <!-- Tabs -->
+      <div class="tab-bar" role="tablist">
+        <button class="tab active" id="tab-camera" role="tab" aria-selected="true" onclick="switchTab('camera')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          Camera
+        </button>
+        <button class="tab" id="tab-upload" role="tab" aria-selected="false" onclick="switchTab('upload')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Image
+        </button>
+      </div>
+
+      <!-- Camera Panel -->
+      <div id="panel-camera" class="scan-panel">
+        <div class="viewport-wrap">
+          <div id="qr-reader" class="qr-viewport"></div>
+          <div class="scan-beam" id="scan-beam" aria-hidden="true"></div>
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+        </div>
+        <button class="btn btn-primary" id="camera-btn" onclick="toggleCamera()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          Start Camera
+        </button>
+      </div>
+
+      <!-- Upload Panel -->
+      <div id="panel-upload" class="scan-panel hidden">
+        <div class="drop-zone" id="drop-zone" tabindex="0" role="button"
+             aria-label="Click or drop a QR image"
+             onclick="document.getElementById('file-input').click()"
+             onkeydown="if(event.key==='Enter')document.getElementById('file-input').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="drop-title">Drop QR image here</p>
+          <p class="drop-sub">or click to browse — PNG, JPG, BMP, GIF</p>
+          <p class="drop-badge">Decoded by Java / ZXing on the server</p>
+          <input type="file" id="file-input" accept="image/*" style="display:none" onchange="scanUploadedFile(this.files[0])" />
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══ Result Card ═══════════════════════════════════════════════════ -->
+    <section class="card result-card" aria-label="Scan Result">
+
+      <div class="status-row">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">Waiting for scan…</span>
+      </div>
+
+      <!-- Server badge -->
+      <div class="server-badge" id="server-badge">
+        <span class="pulse-dot"></span>
+        Java Server · localhost:8080
+      </div>
+
+      <div class="result-box" id="result-box" aria-live="polite">
+        <div class="result-placeholder" id="result-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="20"/>
+            <line x1="14" y1="14" x2="20" y2="14"/><line x1="20" y1="17" x2="20" y2="20"/>
+            <line x1="17" y1="20" x2="20" y2="20"/>
+          </svg>
+          <p>Scanned content will appear here</p>
+        </div>
+        <pre class="result-text hidden" id="result-text"></pre>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-ghost" id="copy-btn" onclick="copyResult()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <button class="btn btn-success hidden" id="open-btn" onclick="openLink()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Link
+        </button>
+      </div>
+
+      <!-- Redirect countdown -->
+      <div class="redirect-bar hidden" id="redirect-bar">
+        <div class="redirect-track"><div class="redirect-fill" id="redirect-fill"></div></div>
+        <span class="redirect-label">Opening in <strong id="countdown">4</strong>s</span>
+        <button class="redirect-cancel" onclick="cancelRedirect()">Cancel</button>
+      </div>
+
+    </section>
+
+    <!-- ══ History Card ══════════════════════════════════════════════════ -->
+    <section class="card history-card" aria-label="Scan History">
+      <div class="history-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Recent Scans <span class="history-src">(stored on Java server)</span>
+        </h2>
+        <button class="btn-clear" onclick="clearHistory()">Clear</button>
+      </div>
+      <ul class="history-list" id="history-list">
+        <li class="history-empty">No scans yet</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+  <!-- html5-qrcode for live camera scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
